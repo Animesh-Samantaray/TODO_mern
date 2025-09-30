@@ -8,37 +8,49 @@ const Todo = () => {
   const [body, setBody] = useState('');
   const [todo, setTodo] = useState([]);
   const [editingId, setEditingId] = useState(null); // For update
+
   const userId = sessionStorage.getItem('userId');
   const email = sessionStorage.getItem('email');
+  const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true'; // boolean
 
   // Fetch todos
   const fetchTodos = async () => {
+     if (!isLoggedIn || !userId) {
+      setTodo([]); // clear todos on logout
+      return;
+    }
+
     try {
-      const res = await axios.get(`http://localhost:1000/api/list/getTasks/${userId}`);
-      setTodo(res.data.list);
+      const res = await axios.get(`${window.location.origin}/api/list/getTasks/${userId}`);
+      setTodo(res.data.list || []); // fallback to empty array
     } catch (error) {
       toast.error('Failed to fetch todos');
+      setTodo([]);
     }
   };
 
   useEffect(() => {
     fetchTodos();
-  }, []);
+  }, [isLoggedIn, userId]); // refetch if login status changes
 
   // Add or Update todo
   const submitTodo = async (e) => {
     e.preventDefault();
     try {
+      if (!isLoggedIn) {
+        toast.error('You must be logged in to add tasks');
+        return;
+      }
+
       if (editingId) {
-        // Update
-        await axios.put(`http://localhost:1000/api/list/updateTask/${editingId}`, { title, body, email });
+        await axios.put(`${window.location.origin}/api/list/updateTask/${editingId}`, { title, body, email });
         toast.success('Task updated');
         setEditingId(null);
       } else {
-        // Add
-        const res = await axios.post('http://localhost:1000/api/list/addTask/', { email, title, body });
+        await axios.post(`${window.location.origin}/api/list/addTask/`, { email, title, body });
         toast.success('Task added');
       }
+
       setTitle('');
       setBody('');
       setIsOpen(false);
@@ -50,8 +62,10 @@ const Todo = () => {
 
   // Delete todo
   const deleteTodo = async (id) => {
+    if (!isLoggedIn) return toast.error('You must be logged in to delete tasks');
+
     try {
-      await axios.delete(`http://localhost:1000/api/list/deleteTask/${id}`, { data: { email } });
+      await axios.delete(`${window.location.origin}/api/list/deleteTask/${id}`, { data: { email } });
       toast.success('Task deleted');
       fetchTodos();
     } catch (error) {

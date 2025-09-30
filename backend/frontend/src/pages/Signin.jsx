@@ -1,60 +1,56 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import axios from 'axios';
-import {toast} from 'react-hot-toast'
+import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router';
-const Signup = () => {
-  const navigate = useNavigate()
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const onSubmit=async(e)=>{
-   try {
-     e.preventDefault();
-    const res = await axios.post('http://localhost:1000/api/auth/register',{email,username,password});
-      toast.success('Thanks..You have registered');
-      navigate('/signin');
-   } catch (error) {
-    if(error.response?.status===400){
-      toast.error('User already exists');
-    }
-    else toast.error(error.message);
-   }
-    
+import { useDispatch } from 'react-redux';
+import { authActions } from '.'; // adjust path if needed
 
-  }
+const Signin = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const onHandle = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post(`${window.location.origin}/api/auth/login`, { email, password });
+
+      // store session
+      sessionStorage.setItem('userId', res.data._id);
+      sessionStorage.setItem('isLoggedIn',true);
+      sessionStorage.setItem('email', res.data.email);
+
+      // redux update
+      dispatch(authActions.login({ email: res.data.email, id: res.data._id }));
+
+      toast.success('Welcome Back Hero');
+      navigate('/'); // ✅ correct navigation
+    } catch (error) {
+      console.log(error.response?.data); // see backend error
+      if (error.response?.status === 404) toast.error('You have to register first');
+      else if (error.response?.status === 400) toast.error('Wrong Password');
+      else toast.error(error.message);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-900">
       <div className="bg-gray-800 shadow-lg rounded-2xl p-8 w-full max-w-md">
         <h1 className="text-2xl font-bold text-center text-white mb-6">
-          Create Your Account
+          Welcome Back ....
         </h1>
-        <form className="flex flex-col space-y-4" onSubmit={onSubmit}>
-          
+        <form className="flex flex-col space-y-4" onSubmit={onHandle}>
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-300">
               Email
             </label>
             <input
               id="email"
-              type="email"
+              type="text"
               name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
-              className="mt-1 w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-300">
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              name="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
               required
               className="mt-1 w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
@@ -79,12 +75,12 @@ const Signup = () => {
             type="submit"
             className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            Sign Up
+            Login
           </button>
         </form>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Signup
+export default Signin;

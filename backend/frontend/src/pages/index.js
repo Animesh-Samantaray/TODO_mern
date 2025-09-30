@@ -1,12 +1,12 @@
 import { configureStore, createSlice } from "@reduxjs/toolkit";
 
-// Load initial state from localStorage
+// ✅ Load initial state from localStorage
 const initialState = {
-  isLoggedIn: localStorage.getItem("isLoggedIn") === "true" || false,
+  isLoggedIn: localStorage.getItem("isLoggedIn") === "true",
   user: JSON.parse(localStorage.getItem("user")) || null,
 };
 
-// Auth slice
+// ✅ Auth slice
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -20,7 +20,7 @@ const authSlice = createSlice({
       localStorage.setItem("user", JSON.stringify(action.payload));
     },
     logout: (state) => {
-      state.isLoggedIn = false;
+      state.isLoggedIn = false; // ✅ boolean, not string
       state.user = null;
 
       // Remove from localStorage
@@ -32,9 +32,10 @@ const authSlice = createSlice({
 
 export const authActions = authSlice.actions;
 
-// Configure store
+// ✅ Configure store
 export const store = configureStore({
   reducer: {
     auth: authSlice.reducer,
+    // todo: todoSlice.reducer  <-- later you can plug in todos here
   },
 });
